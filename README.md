@@ -40,24 +40,7 @@ pip3 install -r requirements.txt
 python3 simple_nut_server.py
 ```
 
-### 5. Test the Connection
-```bash
-python3 test_nut_connection.py
-```
 
-## 🍓 Raspberry Pi Installation
-
-For automated installation on Raspberry Pi:
-
-```bash
-chmod +x install.sh
-./install.sh
-```
-
-This will:
-- Install Python dependencies
-- Create a systemd service
-- Enable auto-start on boot
 
 ## 📊 Supported Data
 
@@ -122,27 +105,8 @@ This will:
 - `real_ecoflow_parser.py` - Protobuf message parser
 - `config.example.json` - Single device configuration template
 - `config_multi.example.json` - Multiple devices configuration template
-- `test_nut_connection.py` - Test NUT connectivity
 - `requirements.txt` - Python dependencies
-- `install.sh` - Raspberry Pi installation script
 
-## 🛠️ Systemd Service
-
-The server can run as a systemd service:
-
-```bash
-# Start service
-sudo systemctl start ecoflow-nut
-
-# Stop service  
-sudo systemctl stop ecoflow-nut
-
-# Check status
-sudo systemctl status ecoflow-nut
-
-# View logs
-journalctl -u ecoflow-nut -f
-```
 
 ## ✅ Status
 
