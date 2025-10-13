@@ -79,7 +79,7 @@ This will:
 ### Single Device
 ```json
 {
-  "device_serial": "R631ZABAWH3E4701",
+  "device_serial": "YOUR_DEVICE_SERIAL",
   "mqtt": {
     "host": "mqtt.ecoflow.com",
     "port": 8883,
@@ -89,7 +89,7 @@ This will:
   "nut": {
     "host": "127.0.0.1",
     "port": 3493,
-    "ups_name": "basement_media_river_3_plus"
+    "ups_name": "your_device_name"
   }
 }
 ```
@@ -99,12 +99,12 @@ This will:
 {
   "devices": [
     {
-      "serial": "R631ZABAWH3E4701",
-      "ups_name": "basement_media_river_3_plus"
+      "serial": "YOUR_DEVICE_SERIAL_1",
+      "ups_name": "device_1_name"
     },
     {
-      "serial": "R631ZABAWH3E5371", 
-      "ups_name": "server_room_river_3_plus"
+      "serial": "YOUR_DEVICE_SERIAL_2", 
+      "ups_name": "device_2_name"
     }
   ],
   "mqtt": {

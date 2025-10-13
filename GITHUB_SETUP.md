@@ -24,6 +24,7 @@ git push -u origin main
 ### 3. Update README URLs
 After creating the repository, update these URLs in the README:
 - Replace `YOUR_PI_IP` with your Raspberry Pi's IP address
+- Replace `YOUR_USERNAME` with your GitHub username
 
 ## 🍓 Raspberry Pi Setup
 
