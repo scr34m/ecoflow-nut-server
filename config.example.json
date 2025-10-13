@@ -1,0 +1,18 @@
+{
+  "device_serial": "YOUR_DEVICE_SERIAL",
+  "mqtt": {
+    "host": "mqtt.ecoflow.com",
+    "port": 8883,
+    "username": "your_email@example.com",
+    "password": "your_ecoflow_password"
+  },
+  "nut": {
+    "host": "127.0.0.1",
+    "port": 3493,
+    "ups_name": "your_device_name"
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  }
+}
