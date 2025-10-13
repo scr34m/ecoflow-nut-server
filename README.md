@@ -15,7 +15,7 @@ A Python-based NUT (Network UPS Tools) server that bridges EcoFlow River 3 Plus 
 
 ### 1. Clone and Setup
 ```bash
-git clone https://github.com/YOUR_USERNAME/ecoflow-nut-server.git
+git clone https://github.com/andreanjos/ecoflow-nut-server.git
 cd ecoflow-nut-server
 ```
 
