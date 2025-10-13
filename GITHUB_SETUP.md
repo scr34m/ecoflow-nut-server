@@ -7,7 +7,7 @@
 2. Click "New Repository"
 3. Name: `ecoflow-nut-server`
 4. Description: `NUT server for EcoFlow River 3 Plus devices - Home Assistant integration`
-5. Make it **Public** (so others can use it)
+5. Make it **Private** (for now)
 6. **Don't** initialize with README (we already have one)
 7. Click "Create Repository"
 
