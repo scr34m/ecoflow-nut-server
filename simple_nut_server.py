@@ -457,14 +457,9 @@ async def main():
         devices = config["devices"]
         mqtt_config = config["mqtt"]
     else:
-        # Fallback to single device config
-        devices = [{"serial": "R631ZABAWH3E4701", "ups_name": "ecoflow_river_3_plus_1"}]
-        mqtt_config = {
-            "host": "mqtt.ecoflow.com",
-            "port": 8883,
-            "username": "andreanjos@gmail.com",
-            "password": "pZX9D-umfZccou2R"
-        }
+        LOG.error(f"❌ Missing configuration file: config_multi.json")
+        exit(1)
+
     
     # Create and start server
     server = SimpleEcoFlowNUTServer(devices, mqtt_config)
