@@ -223,14 +223,7 @@ class SimpleEcoFlowNUTServer:
             return None
     
     def _get_device_serial_from_ups_name(self, ups_name: str) -> str:
-        """Get device serial number from UPS name."""
-        # Map UPS names to device serials
-        device_map = {
-            "basement_media_river_3_plus": "R631ZABAWH3E4701",
-            "server_room_river_3_plus": "R631ZABAWH3E5371", 
-            "sitting_room_river_3_plus": "R631ZABAWH3E4885"
-        }
-        return device_map.get(ups_name, "UNKNOWN")
+        return next((item["serial"] for item in self.devices if item["ups_name"] == ups_name), "UNKNOWN")
     
     def update_ups_data(self, ups_name: str, data: Dict[str, Any]):
         """Update UPS data from parsed message."""
