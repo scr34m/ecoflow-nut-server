@@ -169,27 +169,20 @@ class SimpleEcoFlowNUTServer:
                 LOG.warning(f"⚠️ Unknown device for topic: {topic}")
                 return
             
-            # Try to parse as JSON first (for non-protobuf messages)
+            if msg.payload[0] == 0x7B and msg.payload[1] == 0x22:
+                log.debug(f"📨 JSON message, ignore")
+                return            
+
+            # This is binary protobuf data, try to parse it directly
+            LOG.debug(f"📨 Binary protobuf message ({len(msg.payload)} bytes)")
             try:
-                payload = json.loads(msg.payload.decode())
-                LOG.debug(f"📨 JSON message: {payload}")
-                
-                # Handle JSON messages if needed
-                if "battery" in payload or "soc" in payload:
-                    self.update_ups_data(ups_name, payload)
-                    LOG.info(f"✅ Updated UPS data from JSON for {ups_name}: {payload}")
-                        
-            except (json.JSONDecodeError, UnicodeDecodeError):
-                # This is binary protobuf data, try to parse it directly
-                LOG.debug(f"📨 Binary protobuf message ({len(msg.payload)} bytes)")
-                try:
-                    # Simple binary parsing - just extract basic info
-                    parsed_data = self.parse_simple_binary(msg.payload, ups_name)
-                    if parsed_data:
-                        self.update_ups_data(ups_name, parsed_data)
-                        LOG.info(f"✅ Updated UPS data from binary for {ups_name}: {parsed_data}")
-                except Exception as e:
-                    LOG.error(f"❌ Failed to parse binary protobuf for {ups_name}: {e}")
+                # Simple binary parsing - just extract basic info
+                parsed_data = self.parse_simple_binary(msg.payload, ups_name)
+                if parsed_data:
+                    self.update_ups_data(ups_name, parsed_data)
+                    LOG.info(f"✅ Updated UPS data from binary for {ups_name}: {parsed_data}")
+            except Exception as e:
+                LOG.error(f"❌ Failed to parse binary protobuf for {ups_name}: {e}")
             
         except Exception as e:
             LOG.error(f"❌ Error processing MQTT message: {e}")
@@ -197,8 +190,6 @@ class SimpleEcoFlowNUTServer:
     def parse_simple_binary(self, binary_data: bytes, ups_name: str) -> Optional[Dict[str, Any]]:
         """Parse binary protobuf data using real EcoFlow parser."""
         try:
-            LOG.debug(f"📨 Processing binary data ({len(binary_data)} bytes)")
-            
             # Import the real parser
             from real_ecoflow_parser import EcoFlowProtobufParser
             
@@ -209,7 +200,7 @@ class SimpleEcoFlowNUTServer:
             device_serial = self._get_device_serial_from_ups_name(ups_name)
             
             # Parse the binary data
-            data = parser.parse_binary_message(binary_data, device_serial)
+            data = parser.decode(binary_data, device_serial)
             
             if data:
                 LOG.info(f"✅ Parsed real data for {ups_name}: SOC={data.get('pd.soc', 'N/A')}%, Voltage={data.get('pd.voltage', 'N/A')}mV")
@@ -225,37 +216,58 @@ class SimpleEcoFlowNUTServer:
     def _get_device_serial_from_ups_name(self, ups_name: str) -> str:
         return next((item["serial"] for item in self.devices if item["ups_name"] == ups_name), "UNKNOWN")
     
+    # see https://github.com/foxthefox/ioBroker.ecoflow-mqtt/blob/main/doc/devices/river3plus.md
     def update_ups_data(self, ups_name: str, data: Dict[str, Any]):
         """Update UPS data from parsed message."""
+
         # Initialize UPS data if not exists
         if ups_name not in self.ups_data:
-            self.ups_data[ups_name] = {}
-        
-        # Map EcoFlow data to NUT UPS variables
-        if "pd.soc" in data:
-            self.ups_data[ups_name]["battery.charge"] = data["pd.soc"]
-        
-        if "pd.voltage" in data:
-            # Convert millivolts to volts
-            self.ups_data[ups_name]["battery.voltage"] = data["pd.voltage"] / 1000.0
-        
-        if "pd.current" in data:
-            # Convert milliamps to amps
-            self.ups_data[ups_name]["battery.current"] = data["pd.current"] / 1000.0
-        
-        if "pd.tempC" in data:
-            self.ups_data[ups_name]["battery.temperature"] = data["pd.tempC"]
-        
-        if "pd.charging" in data:
-            self.ups_data[ups_name]["ups.status"] = "CHRG" if data["pd.charging"] else "ONBATT"
-        
+            self.ups_data[ups_name] = {"packs": {}}
+
+        self.ups_data[ups_name]["packs"][data["num"]] = data
+
+        ups = self.ups_data[ups_name]
+        fields = ["soc", "vol", "temp", "fullCap", "designCap", "remainTime"]
+
+        for f in fields:
+            ups[f] = 0
+
+        ups_status = "OL"
+        battery_status = "CHRG"
+        count = len(ups["packs"])
+        for pack in ups["packs"].values():
+            for f in fields:
+                ups[f] += pack.get(f, 0)
+            if pack["chgDsgState"] == 1: # if any of the packs are in discharge state
+                battery_status = "ONBATT"
+                ups_status = "OB"
+
+        for f in fields:
+            if f != "fullCap" and f != "designCap":
+                ups[f] = ups[f] / count if count else 0
+
+
+        self.ups_data[ups_name]["battery.charge"] = ups["soc"]
+
+        # Convert milliamper hours to amper hour
+        self.ups_data[ups_name]["battery.capacity"] = ups["fullCap"] / 1000.0
+        self.ups_data[ups_name]["battery.capacity.nominal"] = ups["designCap"] / 1000.0
+
+        # Convert millivolts to volts
+        self.ups_data[ups_name]["battery.voltage"] = ups["vol"] / 1000.0
+
+        self.ups_data[ups_name]["battery.temperature"] = ups["temp"]
+
+        # so so calculation
+        self.ups_data[ups_name]["battery.runtime"] = int((ups["remainTime"] / 100) * 3600)
+
+        self.ups_data[ups_name]["battery.status"] = battery_status
+
         # Set timestamp
         self.ups_data[ups_name]["ups.timestamp"] = int(time.time())
-        
-        # Set UPS as online
-        if "ups.status" not in self.ups_data[ups_name]:
-            self.ups_data[ups_name]["ups.status"] = "OL"
-    
+
+        self.ups_data[ups_name]["ups.status"] = ups_status
+
     def on_mqtt_disconnect(self, client, userdata, rc):
         """MQTT disconnection callback."""
         LOG.info(f"🔌 MQTT disconnected (rc={rc})")
@@ -384,9 +396,12 @@ class SimpleEcoFlowNUTServer:
         data = self.ups_data[ups_name]
         variables = [
             f"VAR {ups_name} battery.charge {data.get('battery.charge', 0)}",
+            f"VAR {ups_name} battery.capacity {data.get('battery.capacity', 0):.1f}",
+            f"VAR {ups_name} battery.capacity.nominal {data.get('battery.capacity.nominal', 0):.1f}",
             f"VAR {ups_name} battery.voltage {data.get('battery.voltage', 0):.1f}",
-            f"VAR {ups_name} battery.current {data.get('battery.current', 0):.1f}",
             f"VAR {ups_name} battery.temperature {data.get('battery.temperature', 0)}",
+            f"VAR {ups_name} battery.runtime {data.get('battery.runtime', 0)}",
+            f"VAR {ups_name} battery.status {data.get('battery.status', 'UNKNOWN')}",
             f"VAR {ups_name} ups.status {data.get('ups.status', 'UNKNOWN')}",
             f"VAR {ups_name} ups.timestamp {data.get('ups.timestamp', 0)}",
         ]
