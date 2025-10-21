@@ -25,7 +25,7 @@ logging.basicConfig(
 LOG = logging.getLogger(__name__)
 
 class SimpleEcoFlowNUTServer:
-    def __init__(self, devices: List[Dict[str, str]], mqtt_config: Dict[str, Any]):
+    def __init__(self, devices: List[Dict[str, str]], mqtt_config: Dict[str, Any], nut_config: Dict[str, Any]):
         self.devices = devices
         self.mqtt_config = mqtt_config
         self.mqtt_client = None
@@ -34,8 +34,8 @@ class SimpleEcoFlowNUTServer:
         self.running = False
         
         # NUT server configuration
-        self.nut_host = "127.0.0.1"
-        self.nut_port = 3493
+        self.nut_host = nut_config["host"]
+        self.nut_port = nut_config["port"]
         
     async def get_mqtt_credentials(self):
         """Get MQTT credentials from EcoFlow API."""
@@ -464,13 +464,14 @@ async def main():
             config = json.load(f)
         devices = config["devices"]
         mqtt_config = config["mqtt"]
+        nut_config = config["nut"]
     else:
         LOG.error(f"❌ Missing configuration file: config_multi.json")
         exit(1)
 
     
     # Create and start server
-    server = SimpleEcoFlowNUTServer(devices, mqtt_config)
+    server = SimpleEcoFlowNUTServer(devices, mqtt_config, nut_config)
     
     try:
         await server.start()
