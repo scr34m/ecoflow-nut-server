@@ -227,7 +227,7 @@ class SimpleEcoFlowNUTServer:
         self.ups_data[ups_name]["packs"][data["num"]] = data
 
         ups = self.ups_data[ups_name]
-        fields = ["soc", "vol", "temp", "fullCap", "designCap", "remainTime"]
+        fields = ["soc", "vol", "temp", "remainCap", "designCap", "remainTime"]
 
         for f in fields:
             ups[f] = 0
@@ -243,14 +243,14 @@ class SimpleEcoFlowNUTServer:
                 ups_status = "OB"
 
         for f in fields:
-            if f != "fullCap" and f != "designCap":
+            if f != "remainCap" and f != "designCap":
                 ups[f] = ups[f] / count if count else 0
 
 
         self.ups_data[ups_name]["battery.charge"] = ups["soc"]
 
         # Convert milliamper hours to amper hour
-        self.ups_data[ups_name]["battery.capacity"] = ups["fullCap"] / 1000.0
+        self.ups_data[ups_name]["battery.capacity"] = ups["remainCap"] / 1000.0
         self.ups_data[ups_name]["battery.capacity.nominal"] = ups["designCap"] / 1000.0
 
         # Convert millivolts to volts
