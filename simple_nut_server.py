@@ -15,7 +15,8 @@ from typing import Dict, Any, List, Optional
 import paho.mqtt.client as mqtt
 import socket
 import threading
-import threading
+import hashlib
+import uuid
 
 # Configure logging
 logging.basicConfig(
@@ -87,10 +88,10 @@ class SimpleEcoFlowNUTServer:
                         self.mqtt_password = mqtt_info["certificatePassword"]
                         
                         # Generate client_id like the original integration
-                        import uuid
                         user_id = login_data["data"]["user"]["userId"]
-                        self.mqtt_client_id = f"ANDROID_{str(uuid.uuid4()).upper().replace('-', '')}_{user_id}"
-                        
+
+                        self.mqtt_client_id = self._generate_client_id(user_id);
+
                         LOG.info(f"✅ Got MQTT credentials: {self.mqtt_host}:{self.mqtt_port}")
                         LOG.info(f"✅ Client ID: {self.mqtt_client_id}")
                         return True
@@ -98,6 +99,20 @@ class SimpleEcoFlowNUTServer:
             except Exception as e:
                 LOG.error(f"❌ Failed to get MQTT credentials: {e}")
                 return False
+
+    def _generate_client_id(self, user_id):
+        verify_info = "988f28e96e2245a0ab80ec23c6c2c56fd2c0f6ea64194ae78e659acb0317c4c6"
+        verify_info_s = verify_info[0:32]
+        verify_info_s2 = verify_info[32:]
+
+        first_part = "ANDROID_"  + str(uuid.uuid4()).upper() + "_" + str(user_id)
+
+        ts = str(round(time.time() * 1000))
+
+        checksum = hashlib.md5((verify_info_s2 + first_part + ts).encode("utf-8")).hexdigest().upper()
+
+        return first_part + "_" + verify_info_s + "_" + ts + "_" + checksum;
+
 
     def setup_mqtt_client(self):
         """Setup MQTT client to connect to EcoFlow."""
@@ -203,10 +218,8 @@ class SimpleEcoFlowNUTServer:
             data = parser.decode(binary_data, device_serial)
             
             if data:
-                LOG.info(f"✅ Parsed real data for {ups_name}: SOC={data.get('pd.soc', 'N/A')}%, Voltage={data.get('pd.voltage', 'N/A')}mV")
                 return data
             else:
-                LOG.warning(f"⚠️ Could not parse data for {ups_name}")
                 return None
             
         except Exception as e:
