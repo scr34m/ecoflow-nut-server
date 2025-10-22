@@ -359,7 +359,7 @@ class SimpleEcoFlowNUTServer:
             ups_list = []
             for device in self.devices:
                 ups_name = device["ups_name"]
-                ups_list.append(f"{ups_name} EcoFlow River 3 Plus")
+                ups_list.append(f"UPS {ups_name} \"EcoFlow River 3 Plus\"")
             return f"BEGIN LIST UPS\n" + "\n".join(ups_list) + "\nEND LIST UPS\n"
         
         elif command.startswith("LIST VAR "):
@@ -419,7 +419,7 @@ class SimpleEcoFlowNUTServer:
             f"VAR {ups_name} ups.timestamp {data.get('ups.timestamp', 0)}",
         ]
         
-        return "BEGIN LIST VAR\n" + "\n".join(variables) + "\nEND LIST VAR\n"
+        return f"BEGIN LIST VAR {ups_name}\n" + "\n".join(variables) + f"\nEND LIST VAR {ups_name}\n"
     
     async def start(self):
         """Start the EcoFlow NUT server."""
