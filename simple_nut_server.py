@@ -237,11 +237,15 @@ class SimpleEcoFlowNUTServer:
         if ups_name not in self.ups_data:
             self.ups_data[ups_name] = {"packs": {}}
 
-        self.ups_data[ups_name]["packs"][data["num"]] = data
+        if "powOutSumW" in data:
+            self.ups_data[ups_name]["ups.realpower"] = data["powOutSumW"]
+
+        if "packSn" in data:
+            self.ups_data[ups_name]["packs"][data["num"]] = data
 
         ups = self.ups_data[ups_name]
-        fields = ["soc", "vol", "temp", "remainCap", "designCap", "remainTime"]
 
+        fields = ["soc", "vol", "temp", "remainCap", "designCap", "remainTime"]
         for f in fields:
             ups[f] = 0
 
@@ -415,6 +419,7 @@ class SimpleEcoFlowNUTServer:
             f"VAR {ups_name} battery.temperature {data.get('battery.temperature', 0)}",
             f"VAR {ups_name} battery.runtime {data.get('battery.runtime', 0)}",
             f"VAR {ups_name} battery.status {data.get('battery.status', 'UNKNOWN')}",
+            f"VAR {ups_name} ups.realpower {data.get('ups.realpower', 0)}",
             f"VAR {ups_name} ups.status {data.get('ups.status', 'UNKNOWN')}",
             f"VAR {ups_name} ups.timestamp {data.get('ups.timestamp', 0)}",
         ]

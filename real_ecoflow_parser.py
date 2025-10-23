@@ -37,16 +37,14 @@ class EcoFlowProtobufParser:
                 m = pd335_bms_bp_pb2.BMSHeartBeatReport()
                 m.ParseFromString(pdata)
                 params = MessageToDict(m)
-                LOG.debug(f"BMSHeartBeatReport params={params}")
                 return params
 
             elif sender_msg.msg[0].cmd_func == 254 and sender_msg.msg[0].cmd_id == 21:
                 m = pr705_pb2.DisplayPropertyUpload()
                 m.ParseFromString(pdata)
                 params = MessageToDict(m)
-                LOG.debug(f"DisplayPropertyUpload params={params}")
-            elif sender_msg.msg[0].cmd_func == 32 and sender_msg.msg[0].cmd_id == 2:
-                LOG.debug("Ignore AppRuquestBpEuLawDataAck")
+                return params
+
             else:
                 d = pdata.hex()
                 LOG.debug(f"🛑 seq={sender_msg.msg[0].seq} cmd_func={sender_msg.msg[0].cmd_func} cmd_id={sender_msg.msg[0].cmd_id} pdata={d}")
